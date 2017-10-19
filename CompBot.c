@@ -1,3 +1,5 @@
+#pragma config(Sensor, in1,    leftML,         sensorPotentiometer)
+#pragma config(Sensor, in2,    rightML,        sensorPotentiometer)
 #pragma config(Motor,  port2,           botLeftD,      tmotorVex393_MC29, openLoop)
 #pragma config(Motor,  port3,           botRightD,     tmotorVex393_MC29, openLoop, reversed)
 #pragma config(Motor,  port4,           claw,          tmotorVex393_MC29, openLoop)
@@ -85,23 +87,21 @@ void moveMobLift(int speed, int time) {
 task autonomous()
 {
 	moveLift(100, 2000);
-	moveMobLift(100, 500);
+	moveMobLift(100, 400);
   translateBase(100, 3000);
   moveMobLift(100, 1250);
   delay(1000);
   translateBase(-100, 1250);
-  rotateBase(100, 2900/2);
-  translateBase(100, 3150);
+  rotateBase(100, 2800/2);
+  translateBase(100, 3550);
   moveMobLift(-100, 1000);
-}
-
-task copypastraautonomousllylylylyly(){
-	moveLift(100, 2000);
-	moveMobLift(50, 1000);
-  translateBase(50, 6000);
-  moveMobLift(50, 2500);
-  translateBase(-50, 2500);
-  moveMobLift(-50, 2000);
+  //translateBase(100. 500);
+ // translateBase(-100, 500);
+  /*new things below (for going for another mobile goal (everything above is 15 seconds)
+  translateBase(-100, 1000);
+  rotateBase(100, 2500/4);
+  translateBase(100, 2500);
+  rotateBase(100, 2500/4);*/
 }
 
 /*---------------------------------------------------------------------------*/
@@ -113,8 +113,10 @@ task copypastraautonomousllylylylyly(){
 /*                                                                           */
 /*  You must modify the code to add your own robot specific commands here.   */
 /*---------------------------------------------------------------------------*/
-int clawMotorSpeed = 50;
+int clawMotorSpeed = 100;
 int liftMotorSpeed = 100;
+bool mobLiftAuto = false;
+int threshold = 400;
 
 task usercontrol()
 {
@@ -122,14 +124,20 @@ task usercontrol()
 
   while (true)
   {
-
-  	if (vexRT[Btn7U] == 1) { //press 5U button
-				motor[mobilLift] = liftMotorSpeed; //move claw to close
-		} else if(vexRT[Btn7D] == 1) { //press 5D button
-				motor[mobilLift] = -liftMotorSpeed; //move claw to open
-		} else { //if we don't have any buttons pressed
-				motor[mobilLift] = 0; //don't move the claw
+		if (vexRT[Btn7U] == 1) {
+			threshold = 400;
+		} else if (vexRT[Btn7D] == 1) {
+			threshold = 2150;
 		}
+
+		if (SensorValue(rightML) > threshold && SensorValue(rightML) < threshold+250) {
+			motor[mobilLift] = 0;
+		} else if (SensorValue(rightML) < threshold) {
+			motor[mobilLift] = 40;
+		} else if (SensorValue(rightML) > threshold+250) {
+			motor[mobilLift] = -40;
+		}
+
 
 
 		if (vexRT[Btn5U] == 1) { //press 7U button
@@ -148,12 +156,8 @@ task usercontrol()
 				motor[rightLift] = motor[leftLift] = 0; //don't move the lift
 		}
 
-//		if (vexRT[Ch2] > 10) {
-			/*motor[topRightD] = */motor[botRightD] = vexRT[Ch2];
-//		}
+		motor[botRightD] = vexRT[Ch2];
 
-	//	if (vexRT[Ch3] > 10) {
-			/*motor[topLeftD] = */motor[botLeftD] = vexRT[Ch3];
-	//	}
-  }
+		motor[botLeftD] = vexRT[Ch3];
+		}
 }
