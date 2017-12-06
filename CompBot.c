@@ -1,6 +1,6 @@
-#pragma config(Sensor, in1,    leftML,         sensorPotentiometer)
-#pragma config(Sensor, in2,    rightML,        sensorPotentiometer)
-#pragma config(Sensor, in3,    liftH,          sensorPotentiometer)
+#pragma config(Sensor, in1,    MLP,            sensorPotentiometer)
+#pragma config(Sensor, in2,    MGP,            sensorPotentiometer)
+#pragma config(Sensor, in3,    ,               sensorPotentiometer)
 #pragma config(Motor,  port2,           topLeftD,      tmotorVex393_MC29, openLoop)
 #pragma config(Motor,  port3,           botLeftD,      tmotorVex393_MC29, openLoop)
 #pragma config(Motor,  port4,           topRightD,     tmotorVex393_MC29, openLoop, reversed)
@@ -26,69 +26,71 @@ void pre_auton()
   bStopTasksBetweenModes = true;
 }
 
-void translateBase(int speed, int time) {
+void translateBase(byte speed, int time) {
 	motor[botRightD] = motor[botLeftD] = motor[topRightD] = motor[topLeftD] = speed;
 	delay(time);
   motor[botRightD] = motor[botLeftD] = motor[topRightD] = motor[topLeftD] = 0;
 }
 
-void rotateBase(int speed, int time) { //making the speed negative flips the direction of rotation
+void rotateBase(byte speed, int time) { //making the speed negative flips the direction of rotation
 	motor[botRightD] = motor[topRightD] = speed;
 	motor[botLeftD] = motor[topLeftD] = -speed;
 	delay(time);
   motor[botRightD] = motor[botLeftD] = motor[topRightD] = motor[topLeftD] = 0;
 }
 
-void moveLift(int speed, int time) {
+void moveLift(byte speed, int time) {
 	motor[rightLift] = motor[leftLift] = -speed;
 	delay(time);
 	motor[leftLift] = motor[rightLift] = 0;
 }
 
-void moveMobLift(int speed, int time) {
+void moveMobLift(byte speed, int time) {
 	motor[mobilLift] = speed;
 	delay(time);
 	motor[mobilLift] = 0;
 }
 
-void moveClaw(int speed, int time) {
+void moveClaw(byte speed, int time) {
 	motor[claw] = speed;
 	delay(time);
 	motor[claw] = 0;
 }
 
-task autonomous() //AUTON
-{
-	rotateBase(-50, 200); //rotate slighty for adjustment to new base rot beginning movement thing
-	moveLift(127, 150); //raise lift
-	moveLift(-127, 150); //drop lift
-	delay(500);
-	moveLift(100, 2000); //raise lift
-	moveMobLift(100, 400); //move mobil lift up a little bit
-  translateBase(100, 2750); //move forward
-  moveMobLift(100, 1250); //raise mobil lift
-  delay(1000); //wait a sec
-  translateBase(-100, 1750); //move backward
-  rotateBase(100, 2900/2); //rotate 180
-  translateBase(100, 3550); //move forward
-  moveMobLift(-100, 1000); //move lift down
-  translateBase(-100, 500); //move backward a little bit
-  moveLift(-100, 1600);
-  moveClaw(100, 1000);
-  translateBase(-100, 525); //move backward a little bit*/
+bool blueSide = false;
 
-  /*new things below (for going for another mobile goal (everything above is 15 seconds)
-  translateBase(-100, 1000);
-  rotateBase(100, 2500/4);
-  translateBase(100, 2500);
-  rotateBase(100, 2500/4);*/
+task autonomousL() {
+	 moveMobLift(50, 1250*2); //raise mobil lift
+
+}
+
+task autonomous() //Fuk Boi AUTON
+{
+	//rotateBase(-50, 200); //rotate slighty for adjustment to new base rot beginning movement thing
+	moveLift(100, 1200);
+	moveMobLift(-100, 1000);
+  translateBase(100, 3200); //move forward
+  moveMobLift(50, 1300*2); //raise mobil lift
+  delay(200); //wait a sec
+  rotateBase(100,-100);
+  translateBase(-75, 2650); //move backward
+  if (blueSide) {
+  	rotateBase(100,-3100/2);
+  } else {
+  	rotateBase(100, 3100/2); //rotate 180
+	}
+  translateBase(127, 3000); //move forward
+  moveMobLift(-50, 1300*1.25); //move lift down
+  translateBase(-100, 500); //move backward a little bit
+  moveMobLift(127, 100); //move lift down
 }
 
 int clawMotorSpeed = 127;
-int liftMotorSpeed = 50;
-int thresholdML = 0;
+int liftMotorSpeed = 100;
+int thresholdML = 2500;
 int thresholdLft = 2700;
 bool manualLift = false;
+bool manualMGL = false;
 
 task usercontrol() //USER CONTROL
 {
@@ -96,8 +98,8 @@ task usercontrol() //USER CONTROL
   {
   	//Normal Lift
 		if (vexRT[Btn8U] == 1) {
-			thresholdLft = 1100;
 			manualLift = false;
+			thresholdLft = 1100;
 		} else if (vexRT[Btn8D] == 1) {
 			manualLift = false;
 			thresholdLft = 2700;
@@ -108,51 +110,65 @@ task usercontrol() //USER CONTROL
 
 		if (vexRT[Btn6U] == 1) { //press 6U button
 				manualLift = true;
-				motor[rightLift] = motor[leftLift] = -liftMotorSpeed*2; //move lift to open
+				motor[rightLift] = motor[leftLift] = -liftMotorSpeed; //move lift to open
 		} else if(vexRT[Btn6D] == 1) { //press 6D button
 				manualLift = true;
-				motor[rightLift] = motor[leftLift] = liftMotorSpeed*2; //move lift to close
+				motor[rightLift] = motor[leftLift] = liftMotorSpeed; //move lift to close
 		} else if (manualLift) { //if we don't have any buttons pressed
 				motor[rightLift] = motor[leftLift] = 0; //don't move the lift
 		}
 
 		if (!manualLift) {
-			if (SensorValue(liftH) > thresholdLft && SensorValue(liftH) < thresholdLft+100) {
+			if (SensorValue(MLP) > thresholdLft && SensorValue(MLP) < thresholdLft+100) {
 				motor[leftLift] = motor[rightLift] = 0;
-			} else if (SensorValue(liftH) > thresholdLft+100) {
+			} else if (SensorValue(MLP) > thresholdLft+100) {
 				motor[leftLift] = motor[rightLift] = -liftMotorSpeed;
-			} else if (SensorValue(liftH) < thresholdLft) {
+			} else if (SensorValue(MLP) < thresholdLft) {
 				motor[leftLift] = motor[rightLift] = liftMotorSpeed+20;
 			}
 		}
 
-
-		//ML Lift
+		//ML Lif
 		if (vexRT[Btn7U] == 1) {
-			thresholdML = 2150;
-		} else if (vexRT[Btn7D] == 1) {
-			thresholdML = 400;
+			manualMGL = false;
+			thresholdML = 500;
+		} else if (vexRT[Btn7L] == 1) {
+			manualMGL = false;
+			thresholdML = 200;
 		}
 
-		if (SensorValue(rightML) > thresholdML && SensorValue(rightML) < thresholdML+250) {
+		if (vexRT[Btn5U] == 1) {
+			manualMGL = true;
+			motor[mobilLift] = 75;
+		} else if (vexRT[Btn5D] == 1) {
+			manualMGL = true;
+			motor[mobilLift] = -75;
+		} else if (manualMGL) {
 			motor[mobilLift] = 0;
-		} else if (SensorValue(rightML) < thresholdML) {
-			motor[mobilLift] = 40;
-		} else if (SensorValue(rightML) > thresholdML+250) {
-			motor[mobilLift] = -40;
+		}
+
+		if (!manualMGL) {
+			if (SensorValue(MGP) > thresholdML && SensorValue(MGP) < thresholdML+250) {
+				motor[mobilLift] = 0;
+			} else if (SensorValue(MGP) < thresholdML) {
+				motor[mobilLift] = 50;
+			} else if (SensorValue(MGP) > thresholdML+250) {
+				motor[mobilLift] = -50;
+			}
 		}
 
 		//Claw
-		if (vexRT[Btn5U] == 1) { //press 7U button
+		if (vexRT[Btn7D] == 1) { //press 7U button
 				motor[claw] = -clawMotorSpeed; //move claw to close
-		} else if (vexRT[Btn5D] == 1) { //press 7D button
+		} else if (vexRT[Btn7R] == 1) { //press 7D button
 				motor[claw] = clawMotorSpeed; //move claw to open
 		} else {
 				motor[claw] = 0;
 		}
 
 		//Drive
-		motor[topRightD] = motor[botRightD] = vexRT[Ch2];
+		motor[topRightD] = vexRT[Ch2];
+		motor[botRightD] = vexRT[Ch2]*1.1; //this will be removed
 		motor[topLeftD] = motor[botLeftD] = vexRT[Ch3];
 		}
 }
