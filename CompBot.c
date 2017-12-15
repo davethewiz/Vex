@@ -57,31 +57,42 @@ void moveClaw(byte speed, int time) {
 	motor[claw] = 0;
 }
 
+void mobLiftUp(byte speed) {
+	while (SensorValue(MGP) < 2500) {
+		motor[mobilLift] = speed;
+	}
+	motor[mobilLift] = 0;
+}
+
+void mobLiftDown(byte speed) {
+	while (SensorValue(MGP) > 800) {
+		motor[mobilLift] = -speed;
+	}
+	motor[mobilLift] = 0;
+}
+
 bool blueSide = false;
 
 task autonomousL() {
-	 moveMobLift(50, 1250*2); //raise mobil lift
-
+	moveLift(100, 2400);
+	mobLiftDown(65);
 }
 
-task autonomous() //Fuk Boi AUTON
+task autonomous() //Fuk Boi AUTON -nice name dave
 {
-	//rotateBase(-50, 200); //rotate slighty for adjustment to new base rot beginning movement thing
-	moveLift(100, 1200);
-	moveMobLift(-100, 1000);
+	rotateBase(-50, 100); //tiny turn at beginning
+	moveLift(100, 2500);
+	mobLiftDown(65);
   translateBase(100, 3200); //move forward
-  moveMobLift(50, 1300*2); //raise mobil lift
+  mobLiftUp(65);
   delay(200); //wait a sec
-  rotateBase(100,-100);
-  translateBase(-75, 2650); //move backward
-  if (blueSide) {
-  	rotateBase(100,-3100/2);
-  } else {
-  	rotateBase(100, 3100/2); //rotate 180
-	}
-  translateBase(127, 3000); //move forward
+  translateBase(-100, 3000); //move backward
+  rotateBase(100, 3500); //rotate a little bit to white line
+  translateBase(100, 2750); //move forward
+ //	rotateBase(100, 800);
+ 	//translateBase(100, 2500);
   moveMobLift(-50, 1300*1.25); //move lift down
-  translateBase(-100, 500); //move backward a little bit
+  translateBase(-100, 1000); //move backward a little bit
   moveMobLift(127, 100); //move lift down
 }
 
@@ -102,7 +113,7 @@ task usercontrol() //USER CONTROL
 			thresholdLft = 1100;
 		} else if (vexRT[Btn8D] == 1) {
 			manualLift = false;
-			thresholdLft = 2700;
+			thresholdLft = 2500;
 		} else if (vexRT[Btn8L] == 1) {
 			manualLift = false;
 			thresholdLft = 2000;
@@ -125,24 +136,24 @@ task usercontrol() //USER CONTROL
 				motor[leftLift] = motor[rightLift] = -liftMotorSpeed;
 			} else if (SensorValue(MLP) < thresholdLft) {
 				motor[leftLift] = motor[rightLift] = liftMotorSpeed+20;
-			}
+ 			}
 		}
 
 		//ML Lif
 		if (vexRT[Btn7U] == 1) {
 			manualMGL = false;
-			thresholdML = 500;
+			thresholdML = 1000;
 		} else if (vexRT[Btn7L] == 1) {
 			manualMGL = false;
-			thresholdML = 200;
+			thresholdML = 325;
 		}
 
 		if (vexRT[Btn5U] == 1) {
 			manualMGL = true;
-			motor[mobilLift] = 75;
+			motor[mobilLift] = 50;
 		} else if (vexRT[Btn5D] == 1) {
 			manualMGL = true;
-			motor[mobilLift] = -75;
+			motor[mobilLift] = -50;
 		} else if (manualMGL) {
 			motor[mobilLift] = 0;
 		}
