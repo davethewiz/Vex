@@ -78,7 +78,7 @@ task autonomousL() {
 	mobLiftDown(65);
 }
 
-task autonomous() //Fuk Boi AUTON -nice name dave
+task autonomous() 
 {
 	rotateBase(-50, 100); //tiny turn at beginning
 	moveLift(100, 2500);
